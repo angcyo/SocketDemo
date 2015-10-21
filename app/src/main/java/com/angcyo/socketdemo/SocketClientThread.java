@@ -49,12 +49,12 @@ public class SocketClientThread extends Thread {
                 try {
                     connectSocket(mSvrIp, mSvrPort);
                     isIpChange = false;
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     mSocket = null;
                     isConnected = false;
                 }
-            }else if (mSocket.isClosed()){
+            } else if (mSocket.isClosed()) {
                 disconnectSocket();
                 continue;
             }
@@ -70,7 +70,7 @@ public class SocketClientThread extends Thread {
             }
 
             try {
-                Thread.sleep(300);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -83,10 +83,10 @@ public class SocketClientThread extends Thread {
      * 连接socket
      */
     public synchronized void connectSocket(String ip, int port) throws IOException {
-        if (mSocket == null) {
+//        if (mSocket == null) {
             mSocket = new Socket();
             mSocket.setSoTimeout(READ_TIME);
-        }
+//        }
         SocketAddress socketAddress = new InetSocketAddress(ip, port);
         mSocket.connect(socketAddress, TIME_OUT);
         if (mSocket.isConnected()) {
@@ -177,9 +177,10 @@ public class SocketClientThread extends Thread {
         MSG = msg;
     }
 
-    public void setSvrIp(String ip) {
-        if (TextUtils.isEmpty(mSvrIp) || !mSvrIp.equalsIgnoreCase(ip)) {
+    public void setSvrIp(String ip, int port) {
+        if (TextUtils.isEmpty(mSvrIp) || !mSvrIp.equalsIgnoreCase(ip) || port != mSvrPort) {
             mSvrIp = ip;
+            mSvrPort = port;
             isIpChange = true;
         }
     }

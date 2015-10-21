@@ -18,14 +18,20 @@ public class SocketServerThread extends Thread {
     ServerSocket mServerSocket;
     Socket mClickSocket;
     private volatile boolean isExit = false;
+    private int port = 8300;
 
     @Override
     public void run() {
         while (!isExit) {
+            if (MainActivity.PORT != port) {
+                reset();
+                port = MainActivity.PORT;
+            }
+
             if (mServerSocket == null) {
                 try {
-                    mServerSocket = new ServerSocket(8300);
-                } catch (IOException e) {
+                    mServerSocket = new ServerSocket(port);
+                } catch (Exception e) {
                     e.printStackTrace();
                     mServerSocket = null;
                     continue;
@@ -64,14 +70,17 @@ public class SocketServerThread extends Thread {
                 }
             }
 
-
             try {
-                Thread.sleep(300);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
         Log.e("SocketServerThread", "退出");
+        reset();
+    }
+
+    private void reset() {
         if (mClickSocket != null) {
             try {
                 mClickSocket.getOutputStream().close();
@@ -88,6 +97,7 @@ public class SocketServerThread extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            mClickSocket = null;
         }
         if (mServerSocket != null) {
             try {
@@ -95,6 +105,7 @@ public class SocketServerThread extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            mServerSocket = null;
         }
         clientIp = null;
     }

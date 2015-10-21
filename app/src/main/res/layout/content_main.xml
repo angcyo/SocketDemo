@@ -45,6 +45,22 @@
             android:layout_height="wrap_content">
 
             <EditText
+                android:id="@+id/port"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:gravity="center"
+                android:hint="端口范围(5001-65535)"
+                android:inputType="number"
+                android:maxLength="5"
+                android:singleLine="true" />
+        </android.support.design.widget.TextInputLayout>
+
+        <android.support.design.widget.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <EditText
                 android:id="@+id/num1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -96,5 +112,19 @@
             android:layout_margin="10dp"
             android:text="连接服务器" />
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/layout_web"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#30000000"
+        android:paddingTop="100dp"
+        android:visibility="gone">
+
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
 
 </RelativeLayout>

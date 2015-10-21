@@ -21,13 +21,18 @@ import android.widget.TextView;
 public class MainActivity extends AppCompatActivity {
 
     Button button;
-    EditText etNum1, etNum2, etWeb;
-    String svrIp, num1, num2, web, msg;
+    EditText etNum1, etNum2, etWeb, svrPort;
+    String num1;
+    String num2;
+    String web;
+    String msg;
     TextView tvIp;
 
     Handler mHandler;
     Runnable mWorkRunnable;
     SocketServerThread mSocketServerThread;
+
+    public volatile static int PORT;
 
     /**
      * 取得device的IP address
@@ -88,12 +93,14 @@ public class MainActivity extends AppCompatActivity {
         tvIp = (TextView) findViewById(R.id.ip);
         etNum1 = (EditText) findViewById(R.id.num1);
         etNum2 = (EditText) findViewById(R.id.num2);
+        svrPort = (EditText) findViewById(R.id.port);
         etWeb = (EditText) findViewById(R.id.web);
         button = (Button) findViewById(R.id.button);
 
         etNum1.setText("3");
         etNum2.setText("3");
         etWeb.setText("1");
+        svrPort.setText("8300");
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -121,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 checkServer();
+                setSvrPort();
                 if (!TextUtils.isEmpty(msg)) {
                     SocketServerThread.WRITE_MSG = msg;
                     msg = null;
@@ -132,6 +140,20 @@ public class MainActivity extends AppCompatActivity {
         mSocketServerThread = new SocketServerThread();
         mSocketServerThread.start();
         mHandler.post(mWorkRunnable);
+    }
+
+    private void setSvrPort(){
+        String pt= svrPort.getText().toString();
+        if (TextUtils.isEmpty(pt)) {
+            svrPort.setError("请输入有效值");
+            svrPort.requestFocus();
+            return;
+        }
+        try {
+            PORT = Integer.parseInt(pt);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
     }
 
     private void postMsg() {

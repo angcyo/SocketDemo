@@ -1,8 +1,5 @@
 package com.angcyo.socketdemo;
 
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
@@ -13,6 +10,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -23,11 +25,13 @@ public class MainActivity extends AppCompatActivity {
     Handler mHandler;
     Runnable mReadMsgRunnable;
     Button button;
-    EditText etSvrIp, etNum1, etNum2, etWeb;
-    String svrIp, num1, num2, web;
+    EditText etSvrIp, etNum1, etNum2, etWeb, etSvrPort;
+    String svrIp, num1, num2, web, svrPort;
     TextView tvIp;
+    ViewGroup layoutWeb;
+    WebView webView;
 
-    public static void openUrl(Context context, String url) {
+    public void openUrl(String url) {
         if (TextUtils.isEmpty(url)) {
             return;
         }
@@ -35,10 +39,47 @@ public class MainActivity extends AppCompatActivity {
         if (!url.toLowerCase().startsWith("http:") && !url.toLowerCase().startsWith("https:")) {
             url = "http://".concat(url);
         }
+        layoutWeb.setVisibility(View.VISIBLE);
+        Animation animation = AnimationUtils.loadAnimation(this, R.anim.tran_btot);
+        final String finalUrl = url;
+        animation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
 
-        Uri webPage = Uri.parse(url);
-        Intent webIntent = new Intent(Intent.ACTION_VIEW, webPage);
-        context.startActivity(webIntent);
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                webView.loadUrl(finalUrl);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        webView.startAnimation(animation);
+    }
+
+    public void closeUrl() {
+        Animation animation = AnimationUtils.loadAnimation(this, R.anim.tran_ttob);
+        animation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                layoutWeb.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        webView.startAnimation(animation);
     }
 
     @Override
@@ -63,16 +104,49 @@ public class MainActivity extends AppCompatActivity {
         etWeb = (EditText) findViewById(R.id.web);
         button = (Button) findViewById(R.id.button);
         tvIp = (TextView) findViewById(R.id.ipText);
+        etSvrPort = (EditText) findViewById(R.id.port);
+
+        layoutWeb = (ViewGroup) findViewById(R.id.layout_web);
+        webView = (WebView) findViewById(R.id.webView);
+        layoutWeb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeUrl();
+            }
+        });
+
+        webView.setWebViewClient(new WebViewClient() {
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                view.loadUrl(url);
+                return true;
+            }
+
+            @Override
+            public void onLoadResource(WebView view, String url) {
+                super.onLoadResource(view, url);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+            }
+
+        });
 
         etSvrIp.setText("192.168.1.103");
+        etSvrPort.setText("8300");
         etNum1.setText("3");
         etNum2.setText("3");
         etWeb.setText("http://www.baidu.com");
+
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 svrIp = etSvrIp.getText().toString();
+                svrPort = etSvrPort.getText().toString();
                 num1 = etNum1.getText().toString();
                 num2 = etNum2.getText().toString();
                 web = etWeb.getText().toString();
@@ -80,6 +154,9 @@ public class MainActivity extends AppCompatActivity {
                 if (TextUtils.isEmpty(svrIp)) {
                     etSvrIp.setError("请输入有效IP");
                     etSvrIp.requestFocus();
+                }else  if (TextUtils.isEmpty(svrPort)) {
+                    etSvrPort.setError("请输入有效值");
+                    etSvrPort.requestFocus();
                 } else if (TextUtils.isEmpty(num1)) {
                     etNum1.setError("请输入有效值");
                     etNum1.requestFocus();
@@ -87,7 +164,11 @@ public class MainActivity extends AppCompatActivity {
                     etNum2.setError("请输入有效值");
                     etNum2.requestFocus();
                 } else {
-                    mSocketClient.setSvrIp(svrIp);
+                    try {
+                        mSocketClient.setSvrIp(svrIp, Integer.parseInt(svrPort));
+                    } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         });
@@ -125,16 +206,25 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        String string = String.format("%04dB%04dS1", Integer.parseInt(num1), Integer.parseInt(num2));
+        String[] strings = new String[3];
+        strings[0] = string.split("B")[0];
+        strings[1] = string.split("B")[1].split("S")[0];
+        strings[2] = string.split("B")[1].split("S")[1];
+
         String[] cmd = new String[3];
         cmd[0] = msg.split("B")[0];
         cmd[1] = msg.split("B")[1].split("S")[0];
         cmd[2] = msg.split("B")[1].split("S")[1];
 
-        if (Integer.parseInt(num1) == Integer.parseInt(cmd[0])
-                && Integer.parseInt(num2) == Integer.parseInt(cmd[1])
-                && Integer.parseInt(cmd[2]) == 1) {
-            openUrl(MainActivity.this, web);
-            Log.e("打开浏览器", web);
+        if (cmd[0].equalsIgnoreCase(strings[0]) && cmd[1].equalsIgnoreCase(strings[1])) {
+            if (cmd[2].equalsIgnoreCase(strings[2])) {
+                openUrl(web);
+                Log.e("打开浏览器", web);
+            } else {
+                closeUrl();
+                Log.e("关闭浏览器", web);
+            }
         }
     }
 
@@ -159,6 +249,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        if (layoutWeb.getVisibility() != View.GONE) {
+            closeUrl();
+            return;
+        }
+
         super.onBackPressed();
         mSocketClient.exit();
     }
