@@ -135,8 +135,8 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
-        etSvrIp.setText("192.168.1.103");
-        etSvrPort.setText("8300");
+        etSvrIp.setText("192.168.1.116");
+        etSvrPort.setText("19730");
         etNum1.setText("3");
         etNum2.setText("3");
         etWeb.setText("http://www.baidu.com");
@@ -245,6 +245,23 @@ public class MainActivity extends AppCompatActivity {
         }
 
         tvIp.setText(stringBuffer.toString());
+
+        svrIp = etSvrIp.getText().toString();
+        svrPort = etSvrPort.getText().toString();
+
+        if (TextUtils.isEmpty(svrIp)) {
+            etSvrIp.setError("请输入有效IP");
+            etSvrIp.requestFocus();
+        }else  if (TextUtils.isEmpty(svrPort)) {
+            etSvrPort.setError("请输入有效值");
+            etSvrPort.requestFocus();
+        } else {
+            try {
+                mSocketClient.setSvrIp(svrIp, Integer.parseInt(svrPort));
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -254,8 +271,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        super.onBackPressed();
         mSocketClient.exit();
+        super.onBackPressed();
     }
 
     @Override

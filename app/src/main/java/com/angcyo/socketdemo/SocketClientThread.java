@@ -3,10 +3,9 @@ package com.angcyo.socketdemo;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -54,7 +53,7 @@ public class SocketClientThread extends Thread {
                     mSocket = null;
                     isConnected = false;
                 }
-            } else if (mSocket.isClosed()) {
+            } else if (mSocket.isClosed() || !mSocket.isConnected()) {
                 disconnectSocket();
                 continue;
             }
@@ -84,12 +83,19 @@ public class SocketClientThread extends Thread {
      */
     public synchronized void connectSocket(String ip, int port) throws IOException {
 //        if (mSocket == null) {
-            mSocket = new Socket();
-            mSocket.setSoTimeout(READ_TIME);
+        mSocket = new Socket();
+        mSocket.setSoTimeout(READ_TIME);
+//        mSocket.setSoLinger(READ_TIME);
+//        mSocket.setKeepAlive(false);
+//        mSocket.setTcpNoDelay(true);
 //        }
         SocketAddress socketAddress = new InetSocketAddress(ip, port);
-        mSocket.connect(socketAddress, TIME_OUT);
-        if (mSocket.isConnected()) {
+        try {
+            mSocket.connect(socketAddress, TIME_OUT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (mSocket != null && !mSocket.isClosed() && mSocket.isConnected()) {// mSocket.isConnected()
             mDataRead = mSocket.getInputStream();
             mDataWrite = mSocket.getOutputStream();
             isConnected = true;
@@ -144,28 +150,33 @@ public class SocketClientThread extends Thread {
      */
     private synchronized void read() throws Exception {
         if (mDataRead != null) {
-            String line;
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(mDataRead));
-            line = bufferedReader.readLine();//阻塞方法
-            if (!TextUtils.isEmpty(line)) {
-                postMsg(line);//读取到数据
+//            String line = null;
+//            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(mDataRead));
+//
+//            try {
+//                line = bufferedReader.readLine();//阻塞方法
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            if (!TextUtils.isEmpty(line)) {
+//                postMsg(line);//读取到数据
+//                haveMsg = true;
+//            } else {
+//                haveMsg = false;
+//            }
+
+            int len;
+            byte[] bytes = new byte[1024];
+            DataInputStream dataInputStream = new DataInputStream(mDataRead);
+            if ((  len = dataInputStream.read(bytes)) > -1) {
+                byte[] temp = new byte[len];
+                System.arraycopy(bytes, 0, temp, 0, len);
+                postMsg(new String(temp));//读取到数据
                 haveMsg = true;
             } else {
-                disconnectSocket();
+//                disconnectSocket();
                 haveMsg = false;
             }
-
-//            int len;
-//            byte[] bytes = new byte[1024];
-////            DataInputStream dataInputStream = new DataInputStream(mDataRead);
-//
-//            if ((  len = mDataRead.read(bytes)) > -1) {
-//                postMsg(new String(bytes));//读取到数据
-////                haveMsg = true;
-//            } else {
-//                disconnectSocket();
-////                haveMsg = false;
-//            }
         }
     }
 
@@ -174,7 +185,7 @@ public class SocketClientThread extends Thread {
     }
 
     public void postMsg(String msg) {
-        MSG = msg;
+        MSG = msg.trim();
     }
 
     public void setSvrIp(String ip, int port) {

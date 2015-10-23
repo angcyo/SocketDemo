@@ -19,6 +19,7 @@ public class SocketServerThread extends Thread {
     Socket mClickSocket;
     private volatile boolean isExit = false;
     private int port = 8300;
+    int TIME_OUT = 8 * 1000;
 
     @Override
     public void run() {
@@ -39,6 +40,7 @@ public class SocketServerThread extends Thread {
             }
             if (mClickSocket == null) {
                 try {
+                    mServerSocket.setSoTimeout(TIME_OUT);
                     mClickSocket = mServerSocket.accept();
                     clientIp = mClickSocket.getInetAddress().toString();
                 } catch (IOException e) {
@@ -47,7 +49,8 @@ public class SocketServerThread extends Thread {
                     clientIp = null;
                     continue;
                 }
-            } else if (mClickSocket.isClosed()) {
+            } else if (mClickSocket.isClosed() || !mClickSocket.isConnected()) {
+                reset();
                 mClickSocket = null;
                 clientIp = null;
                 continue;
